@@ -1,0 +1,14 @@
+[build]
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/shorten"
+  to = "/.netlify/functions/shorten"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/openurl"
+  to = "/.netlify/functions/openurl"
+  status = 200
+  force = true
