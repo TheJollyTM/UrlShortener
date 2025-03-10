@@ -38,7 +38,7 @@ exports.handler = async (event) => {
         await redis.setex(shortId, 600, params.url);       // Store short 
         await redis.setex(`long:${params.url}`, 600, shortId); // Store long 
 
-        return { statusCode: 200, body: `https://jollytm.netlify.app/op?id=${shortId}` };
+        return { statusCode: 200, body: `https://jly.netlify.app/op?id=${shortId}` };
     }
 
     if (path.endsWith("/op")) {
