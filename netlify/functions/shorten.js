@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
     const shortId = base62Encode(parseInt(hash.substring(0, 6), 16));  // Convert to number and then base62 encode
     
     // Return the shortened URL
-    const shortUrl = `https://your-site-name.netlify.app/.netlify/functions/openurl?id=${shortId}`;
+    const shortUrl = `https://jollytm.netlify.app/op?id=${shortId}`;
 
     return {
         statusCode: 200,
