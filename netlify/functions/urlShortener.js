@@ -32,7 +32,7 @@ exports.handler = async (event, context) => {
         if (!url) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'No URL provided' })
+                body: 'Error: No URL provided' // Return error as plain text
             };
         }
 
@@ -42,12 +42,12 @@ exports.handler = async (event, context) => {
         // Take the first 6 characters of the hash and convert it to a Base62 string
         const shortId = base62Encode(parseInt(hash.substring(0, 6), 16));  // Convert to number and then Base62 encode
         
-        // Return the shortened URL
+        // Return the shortened URL as plain text (no JSON)
         const shortUrl = `https://jollytm.netlify.app/op?id=${shortId}`;
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ shortenedUrl: shortUrl })
+            body: shortUrl // Return just the short URL in plain text
         };
 
     } else if (path === '/op') {
@@ -57,7 +57,7 @@ exports.handler = async (event, context) => {
         if (!id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'No ID provided' })
+                body: 'Error: No ID provided' // Return error as plain text
             };
         }
 
@@ -81,6 +81,6 @@ exports.handler = async (event, context) => {
     // Return 404 if the path doesn't match /short or /op
     return {
         statusCode: 404,
-        body: JSON.stringify({ error: 'Not Found' })
+        body: 'Error: Not Found' // Return error as plain text
     };
 };
