@@ -14,7 +14,7 @@ function base62Encode(num) {
 }
 
 exports.handler = async (event, context) => {
-    const { url } = JSON.parse(event.body);
+    const { url } = event.queryStringParameters;
 
     if (!url) {
         return {
