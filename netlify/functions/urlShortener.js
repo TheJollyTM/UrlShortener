@@ -30,7 +30,7 @@ exports.handler = async (event) => {
         // Check if the long URL is already stored
         const existingShortId = await redis.get(`long:${params.url}`);
         if (existingShortId) {
-            return { statusCode: 200, body: `https://jollytm.netlify.app/op?id=${existingShortId}` };
+            return { statusCode: 200, body: `https://jly.netlify.app/op?id=${existingShortId}` };
         }
 
         // Generate and store a new short ID
