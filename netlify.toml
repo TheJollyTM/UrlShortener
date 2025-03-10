@@ -2,13 +2,13 @@
   functions = "netlify/functions"
 
 [[redirects]]
-  from = "/shorten"
-  to = "/.netlify/functions/shorten"
+  from = "/short"
+  to = "/.netlify/functions/urlShortener"
   status = 200
   force = true
 
 [[redirects]]
-  from = "/openurl"
-  to = "/.netlify/functions/openurl"
+  from = "/op"
+  to = "/.netlify/functions/urlShortener"
   status = 200
   force = true
