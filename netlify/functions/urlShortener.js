@@ -1,86 +1,52 @@
-const crypto = require('crypto');
+const Redis = require("ioredis");
+const crypto = require("crypto");
 
-// Base62 characters for encoding
-const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const BASE62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const redis = new Redis({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    username: process.env.REDIS_USERNAME || "default",
+    password: process.env.REDIS_PASSWORD
+});
 
-// Function to convert a number into Base62 string
-function base62Encode(num) {
-    let base62 = '';
-    while (num > 0) {
-        base62 = BASE62[num % 62] + base62;
-        num = Math.floor(num / 62);
+// Function to generate a short ID
+function generateShortId(url) {
+    const hash = crypto.createHash('md5').update(url).digest('hex');
+    let numericHash = BigInt('0x' + hash);
+    let shortId = '';
+    while (numericHash > 0n) {
+        shortId = BASE62[Number(numericHash % 62n)] + shortId;
+        numericHash /= 62n;
     }
-    return base62;
+    return shortId.slice(0, 10); // Max 10 chars
 }
 
-// Function to decode Base62 back to number
-function base62Decode(str) {
-    let num = 0;
-    for (let i = 0; i < str.length; i++) {
-        num = num * 62 + BASE62.indexOf(str[i]);
-    }
-    return num;
-}
+exports.handler = async (event) => {
+    const { path, queryStringParameters: params } = event;
 
-exports.handler = async (event, context) => {
-    const { path, queryStringParameters } = event;
+    if (path.endsWith("/short")) {
+        if (!params.url) return { statusCode: 400, body: "Error: No URL provided" };
 
-    if (path === '/short') {
-        // Handle shortening of the URL
-        const { url } = queryStringParameters;
-
-        if (!url) {
-            return {
-                statusCode: 400,
-                body: 'Error: No URL provided' // Return error as plain text
-            };
+        // Check if the long URL is already stored
+        const existingShortId = await redis.get(`long:${params.url}`);
+        if (existingShortId) {
+            return { statusCode: 200, body: `https://jollytm.netlify.app/op?id=${existingShortId}` };
         }
 
-        // Generate hash using MD5
-        const hash = crypto.createHash('md5').update(url).digest('hex');
+        // Generate and store a new short ID
+        const shortId = generateShortId(params.url);
+        await redis.setex(shortId, 600, params.url);       // Store short 
+        await redis.setex(`long:${params.url}`, 600, shortId); // Store long 
 
-        // Take the first 6 characters of the hash and convert it to a Base62 string
-        const shortId = base62Encode(parseInt(hash.substring(0, 6), 16));  // Convert to number and then Base62 encode
-        
-        // Return the shortened URL as plain text (no JSON)
-        const shortUrl = `https://jollytm.netlify.app/op?id=${shortId}`;
-
-        return {
-            statusCode: 200,
-            body: shortUrl // Return just the short URL in plain text
-        };
-
-    } else if (path === '/op') {
-        // Handle redirection from shortened URL
-        const { id } = queryStringParameters;
-
-        if (!id) {
-            return {
-                statusCode: 400,
-                body: 'Error: No ID provided' // Return error as plain text
-            };
-        }
-
-        // Decode the Base62 ID to get the number
-        const decoded = base62Decode(id);
-        
-        // Convert the decoded value back to a hash-like string (for simulation purposes)
-        const hash = decoded.toString(16).padStart(6, '0'); // Re-create the hash for checking
-        
-        // Simulate finding the original URL by using a mock mapping
-        const originalUrl = `https://www.example.com`;  // In practice, you should use a database or memory store to map the IDs back to the URLs.
-
-        return {
-            statusCode: 302,
-            headers: {
-                Location: originalUrl // Simulate the redirect to the original URL
-            }
-        };
+        return { statusCode: 200, body: `https://jollytm.netlify.app/op?id=${shortId}` };
     }
 
-    // Return 404 if the path doesn't match /short or /op
-    return {
-        statusCode: 404,
-        body: 'Error: Not Found' // Return error as plain text
-    };
+    if (path.endsWith("/op")) {
+        if (!params.id) return { statusCode: 400, body: "Error: No ID provided" };
+        const originalUrl = await redis.get(params.id);
+        if (!originalUrl) return { statusCode: 404, body: "Error: URL expired or not found" };
+        return { statusCode: 302, headers: { Location: originalUrl } };
+    }
+
+    return { statusCode: 404, body: "Error: Invalid request" };
 };
