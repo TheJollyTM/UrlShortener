@@ -35,8 +35,8 @@ exports.handler = async (event) => {
 
         // Generate and store a new short ID
         const shortId = generateShortId(params.url);
-        await redis.setex(shortId, 600, params.url);       // Store short 
-        await redis.setex(`long:${params.url}`, 600, shortId); // Store long 
+        await redis.setex(shortId, 28800, params.url);       // Store short 
+        await redis.setex(`long:${params.url}`, 28800, shortId); // Store long 
 
         return { statusCode: 200, body: `https://jly.netlify.app/op?id=${shortId}` };
     }
